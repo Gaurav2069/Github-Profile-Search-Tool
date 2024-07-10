@@ -1,73 +1,65 @@
-const url = "https://api.github.com/users";
-const searchInputEl = document.getElementById("searchInput");
-const searchButtonEl = document.getElementById("searchBtn");
-const profileContainerEl = document.getElementById("profileContainer");
-const loadingEl = document.getElementById("loading");
+window.onload = () => {
+    const searchBox = document.querySelector('#search');
 
-const generateProfile = (profile) => {
-  return `
-   <div class="profile-box">
-   <div class="top-section">
-     <div class="left">
-       <div class="avatar">
-         <img alt="avatar" src="${profile.avatar_url}" />
-       </div>
-       <div class="self">
-         <h1>${profile.name}</h1>
-         <h1>@${profile.login}</h1>
-       </div>
-     </div>
-     <a href="${profile.html_url}" target="_black">
-     <button class="primary-btn">Check Profile</button>
-     </a>
-   </div>
-   <div class="about">
-     <h2>About</h2>
-     <p>
-     ${profile.bio}
-     </p>
-   </div>
-   <div class="status">
-     <div class="status-item">
-       <h3>Followers</h3>
-       <p>${profile.followers}</p>
-     </div>
-     <div class="status-item">
-       <h3>Followings</h3>
-       <p>${profile.following}</p>
-     </div>
-     <div class="status-item">
-       <h3>Repos</h3>
-       <p>${profile.public_repos}</p>
-     </div>
-   </div>
- </div>
-   `;
-};
+    searchBox.addEventListener('focusout', () => {
+        formSubmit();
+    });
 
-const fetchProfile = async () => {
-  const username = searchInputEl.value;
+    getUser("bhanu6193");
+}
 
-  loadingEl.innerText = "loading.....";
-  loadingEl.style.color = "black";
-
-  try {
-    const res = await fetch(`${url}/${username}`);
-    const data = await res.json();
-    if (data.bio) {
-      loadingEl.innerText = "";
-      profileContainerEl.innerHTML = generateProfile(data);
-    } else {
-      loadingEl.innerHTML = data.message;
-      loadingEl.style.color = "red";
-      profileContainerEl.innerText = "";
+const formSubmit = () => {
+    const searchBox = document.querySelector('#search');
+    if (searchBox.value !== "") {
+        getUser(searchBox.value);
+        searchBox.value = "";
     }
+    return false;
+}
 
-    console.log("data", data);
-  } catch (error) {
-    console.log({ error });
-    loadingEl.innerText = "";
-  }
-};
+const getUser = async (username) => {
+    const API_URL = "https://api.github.com/users";
+    const main = document.querySelector('#main');
 
-searchButtonEl.addEventListener("click", fetchProfile);
+    const response = await fetch(`${API_URL}/${username}`);
+    const data = await response.json();
+
+    const card = `
+        <div class="card">
+            <div>
+                <img class="avatar" src="${data.avatar_url}" alt="dp">
+            </div>
+            <div class="user">
+                <h2>
+                    <a href="${data.html_url}" target="_blank">${data.name}</a>
+                </h2>
+                <p>${data.bio}</p>
+                <ul>
+                    <li>${data.following}<strong> following</strong></li>
+                    <li>${data.followers}<strong> followers</strong></li>
+                    <li>${data.public_repos}<strong> Repos</strong></li>
+                </ul>
+                <div id="repos"></div>
+            </div>
+        </div>
+    `;
+
+    main.innerHTML = card;
+    getRepos(API_URL, username);
+}
+
+const getRepos = async (API_URL, username) => {
+    const repos = document.querySelector('#repos');
+
+    const response = await fetch(`${API_URL}/${username}/repos`);
+    const data = await response.json();
+
+    data.forEach(repo => {
+        const element = document.createElement('a');
+        element.classList.add('repo');
+        element.href = repo.html_url;
+        element.innerText = repo.name;
+        element.target = "_blank";
+        repos.appendChild(element);
+    });
+}
